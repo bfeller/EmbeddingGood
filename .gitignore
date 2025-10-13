@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Envs
+.env
+.venv/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Cache/Build
+.cache/
+*.log
+build/
+dist/
+
+# Editor
+.vscode/
+.idea/
+
+# Local secrets (DO NOT COMMIT)
+huggingface_temp_token.md
