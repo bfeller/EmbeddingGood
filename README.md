@@ -18,12 +18,21 @@ Reference: [EmbeddingGemma on Hugging Face](https://huggingface.co/google/embedd
 - **HF_TOKEN**: Your Hugging Face access token (Required to pull `google/embeddinggemma-300m`, which is gated). This is automatically mapped to `HUGGINGFACE_HUB_TOKEN` at runtime.
 - **MODEL_ID**: Optional model id. Default: `google/embeddinggemma-300m`.
 - **TRANSFORMERS_CACHE / HF_HOME**: Optional cache locations for Hugging Face files. The Docker run command mounts a named volume at `/root/.cache/huggingface` so weights persist.
+- **RL_REQUESTS_PER_MINUTE**: Per-key refill rate (default 120).
+- **RL_BURST**: Per-key burst capacity (default 60).
 
 ### Getting a Hugging Face token and model access
 1. Create/sign in to a Hugging Face account.
 2. Visit the model page and accept the license/terms: [google/embeddinggemma-300m](https://huggingface.co/google/embeddinggemma-300m).
 3. Generate a User Access Token: Profile → Settings → Access Tokens → New Token (read scope is sufficient). Copy the token.
 4. Put the token string into `huggingface_temp_token.md` locally (kept out of git), or export it as an environment variable when running Docker.
+
+### Generate API keys (Linux)
+```
+openssl rand -hex 32
+# multiple keys example
+API_KEYS="$(openssl rand -hex 32),$(openssl rand -hex 32)"
+```
 
 ## Build
 ```
@@ -53,4 +62,6 @@ curl -X POST http://localhost:8000/embed -H 'content-type: application/json' -H 
 ## Notes
 - Float16 is not supported by EmbeddingGemma (we use float32).
 - `HF_TOKEN` is mapped to `HUGGINGFACE_HUB_TOKEN` automatically.
+- The service does not store requests or results. Intermediary caching is discouraged via `Cache-Control: no-store`.
+- To fully clear model files, remove the HF cache volume: `docker volume rm embedding_hf_cache`.
 
