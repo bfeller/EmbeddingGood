@@ -18,7 +18,7 @@ class EmbeddingModel:
     def __init__(self) -> None:
         # Ensure HF token is picked up from env if provided (HF_TOKEN)
         # sentence-transformers/transformers will use it automatically.
-        self.model = SentenceTransformer(MODEL_ID)
+        self.model = SentenceTransformer(MODEL_ID, device="cpu")
 
     @staticmethod
     def _truncate_and_renorm(emb: np.ndarray, dim: int) -> np.ndarray:

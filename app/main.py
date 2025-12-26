@@ -18,14 +18,13 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok", model=MODEL_ID)
 
 
-@app.post("/embed", response_model=EmbedResponse, dependencies=[Depends(require_api_key)])
-def embed(body: EmbedRequest, response: Response, x_api_key: str | None = Header(default=None)) -> EmbedResponse:
+@app.post("/embed", response_model=EmbedResponse)
+def embed(body: EmbedRequest, response: Response, api_key: str = Depends(require_api_key)) -> EmbedResponse:
     # No-store headers to prevent intermediary caching
     response.headers["Cache-Control"] = "no-store"
 
     # Rate limiting per API key
-    key = x_api_key or ""
-    ok, reset_sec, limit_per_min, remaining = rate_limiter.allow(key)
+    ok, reset_sec, limit_per_min, remaining = rate_limiter.allow(api_key)
     response.headers["X-RateLimit-Limit"] = str(limit_per_min)
     response.headers["X-RateLimit-Remaining"] = str(remaining)
     response.headers["X-RateLimit-Reset"] = str(int(reset_sec))

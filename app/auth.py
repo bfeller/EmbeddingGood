@@ -21,11 +21,22 @@ def _load_allowed_keys_from_env() -> Set[str]:
 ALLOWED_KEYS = _load_allowed_keys_from_env()
 
 
-def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
-    if not x_api_key or x_api_key not in ALLOWED_KEYS:
+def require_api_key(
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> str:
+    api_key = x_api_key
+    if not api_key and authorization:
+        if authorization.lower().startswith("bearer "):
+            api_key = authorization[7:].strip()
+        else:
+            api_key = authorization.strip()
+
+    if not api_key or api_key not in ALLOWED_KEYS:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized",
         )
+    return api_key
 
 
