@@ -28,13 +28,21 @@ class EmbeddingModel:
         return vec / norms
 
     def embed_query(self, inputs: Sequence[str], dimension: int) -> np.ndarray:
-        embeddings = self.model.encode(list(inputs), prompt_name="query")
+        try:
+            embeddings = self.model.encode(list(inputs), prompt_name="query")
+        except (ValueError, TypeError):
+            embeddings = self.model.encode(list(inputs))
+            
         if embeddings.ndim == 1:
             embeddings = np.expand_dims(embeddings, axis=0)
         return self._truncate_and_renorm(embeddings, dimension)
 
     def embed_document(self, inputs: Sequence[str], dimension: int) -> np.ndarray:
-        embeddings = self.model.encode(list(inputs), prompt_name="document")
+        try:
+            embeddings = self.model.encode(list(inputs), prompt_name="document")
+        except (ValueError, TypeError):
+            embeddings = self.model.encode(list(inputs))
+            
         if embeddings.ndim == 1:
             embeddings = np.expand_dims(embeddings, axis=0)
         return self._truncate_and_renorm(embeddings, dimension)

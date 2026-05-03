@@ -1,8 +1,10 @@
-# EmbeddingGemma API (Dockerized)
+# Embedding Model API (Dockerized)
 
-FastAPI service for `google/embeddinggemma-300m` embeddings.
+FastAPI service for running embedding models such as `google/embeddinggemma-300m` or `ibm-granite/granite-embedding-311m-multilingual-r2`.
 
-Reference: [EmbeddingGemma on Hugging Face](https://huggingface.co/google/embeddinggemma-300m)
+References:
+- [EmbeddingGemma on Hugging Face](https://huggingface.co/google/embeddinggemma-300m)
+- [IBM Granite Embedding on Hugging Face](https://huggingface.co/ibm-granite/granite-embedding-311m-multilingual-r2)
 
 ## Endpoints
 - GET `/health` → `{ status, model }`
@@ -15,8 +17,8 @@ Reference: [EmbeddingGemma on Hugging Face](https://huggingface.co/google/embedd
 
 ## Environment variables
 - **API_KEYS**: Comma-separated list of allowed API keys used for `x-api-key` auth. Example: `API_KEYS="key1,key2"`.
-- **HF_TOKEN**: Your Hugging Face access token (Required to pull `google/embeddinggemma-300m`, which is gated). This is automatically mapped to `HUGGINGFACE_HUB_TOKEN` at runtime.
-- **MODEL_ID**: Optional model id. Default: `google/embeddinggemma-300m`.
+- **HF_TOKEN**: Your Hugging Face access token (Required to pull gated models like `google/embeddinggemma-300m`). This is automatically mapped to `HUGGINGFACE_HUB_TOKEN` at runtime.
+- **MODEL_ID**: Optional model id. Default: `google/embeddinggemma-300m`. You can also set this to `ibm-granite/granite-embedding-311m-multilingual-r2` or other compatible sentence-transformers models.
 - **TRANSFORMERS_CACHE / HF_HOME**: Optional cache locations for Hugging Face files. The Docker run command mounts a named volume at `/root/.cache/huggingface` so weights persist.
 - **RL_REQUESTS_PER_MINUTE**: Per-key refill rate (default 120).
 - **RL_BURST**: Per-key burst capacity (default 60).
@@ -45,6 +47,9 @@ docker volume create embedding_hf_cache
 TOKEN=$(cat huggingface_temp_token.md)
 
 docker run -p 8000:8000 -e API_KEYS="dev-key" -e HF_TOKEN="$TOKEN" -e MODEL_ID=google/embeddinggemma-300m -v embedding_hf_cache:/root/.cache/huggingface --name embeddinggemma-api embeddinggemma-api
+
+# Example using IBM Granite:
+# docker run -p 8000:8000 -e API_KEYS="dev-key" -e HF_TOKEN="$TOKEN" -e MODEL_ID=ibm-granite/granite-embedding-311m-multilingual-r2 -v embedding_hf_cache:/root/.cache/huggingface --name embeddinggemma-api embeddinggemma-api
 ```
 
 ## Test
