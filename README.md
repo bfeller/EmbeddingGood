@@ -20,6 +20,9 @@ Reference: [EmbeddingGemma on Hugging Face](https://huggingface.co/google/embedd
 - **TRANSFORMERS_CACHE / HF_HOME**: Optional cache locations for Hugging Face files. The Docker run command mounts a named volume at `/root/.cache/huggingface` so weights persist.
 - **RL_REQUESTS_PER_MINUTE**: Per-key refill rate (default 120).
 - **RL_BURST**: Per-key burst capacity (default 60).
+- **ENCODE_BATCH_SIZE**: Sentence-transformers encode batch size (default 4). The library default of 32 can spike CPU RAM on long inputs.
+- **MAX_SEQ_LENGTH**: Token cap passed to the model (default 512). Sufficient for the API's 2000-character limit without reserving 2048-token activations.
+- **TORCH_NUM_THREADS** / **OMP_NUM_THREADS** / **MKL_NUM_THREADS**: CPU thread limits (default 2 in Docker).
 
 ### Getting a Hugging Face token and model access
 1. Create/sign in to a Hugging Face account.
@@ -34,17 +37,27 @@ openssl rand -hex 32
 API_KEYS="$(openssl rand -hex 32),$(openssl rand -hex 32)"
 ```
 
-## Build
+## Build and run (Compose)
+
+```
+cp .env.example .env   # set HF_TOKEN and API_KEYS
+DOCKER_BUILDKIT=1 docker compose build
+docker compose up -d
+```
+
+Published on host port **8010** by default (`8010:8000`).
+
+## Build (standalone)
 ```
 DOCKER_BUILDKIT=1 docker build -t embeddinggemma-api .
 ```
 
-## Run
+## Run (standalone)
 ```
 docker volume create embedding_hf_cache
 TOKEN=$(cat huggingface_temp_token.md)
 
-docker run -p 8000:8000 -e API_KEYS="dev-key" -e HF_TOKEN="$TOKEN" -e MODEL_ID=google/embeddinggemma-300m -v embedding_hf_cache:/root/.cache/huggingface --name embeddinggemma-api embeddinggemma-api
+docker run -p 8000:8000 --memory=3g -e API_KEYS="dev-key" -e HF_TOKEN="$TOKEN" -e MODEL_ID=google/embeddinggemma-300m -v embedding_hf_cache:/root/.cache/huggingface --name embeddinggemma-api embeddinggemma-api
 ```
 
 ## Test

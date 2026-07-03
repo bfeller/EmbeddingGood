@@ -1,0 +1,25 @@
+services:
+  embedding:
+    build: .
+    image: embedding-embedding
+    container_name: embedding_good
+    restart: unless-stopped
+    ports:
+      - "8010:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:?Set HF_TOKEN}
+      API_KEYS: ${API_KEYS:?Set API_KEYS}
+      MODEL_ID: ${MODEL_ID:-google/embeddinggemma-300m}
+      ENCODE_BATCH_SIZE: ${ENCODE_BATCH_SIZE:-4}
+      MAX_SEQ_LENGTH: ${MAX_SEQ_LENGTH:-512}
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      TOKENIZERS_PARALLELISM: "false"
+      TORCH_NUM_THREADS: "2"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    mem_limit: 3g
+    memswap_limit: 3g
+
+volumes:
+  hf_cache:

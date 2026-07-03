@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import List, Sequence
+from typing import Any, Sequence
 
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 
 
@@ -14,11 +15,28 @@ if os.getenv("HF_TOKEN") and not os.getenv("HUGGINGFACE_HUB_TOKEN"):
     os.environ["HUGGINGFACE_HUB_TOKEN"] = os.environ["HF_TOKEN"]
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+ENCODE_BATCH_SIZE = _env_int("ENCODE_BATCH_SIZE", 4)
+MAX_SEQ_LENGTH = _env_int("MAX_SEQ_LENGTH", 512)
+TORCH_NUM_THREADS = _env_int("TORCH_NUM_THREADS", 2)
+
+
 class EmbeddingModel:
     def __init__(self) -> None:
-        # Ensure HF token is picked up from env if provided (HF_TOKEN)
-        # sentence-transformers/transformers will use it automatically.
+        torch.set_num_threads(TORCH_NUM_THREADS)
         self.model = SentenceTransformer(MODEL_ID, device="cpu")
+        # Default 2048 + encode batch_size=32 can spike CPU RAM into many GB; cap both.
+        self.model.max_seq_length = MAX_SEQ_LENGTH
+        self._encode_kwargs: dict[str, Any] = {
+            "batch_size": ENCODE_BATCH_SIZE,
+            "show_progress_bar": False,
+        }
 
     @staticmethod
     def _truncate_and_renorm(emb: np.ndarray, dim: int) -> np.ndarray:
@@ -28,13 +46,13 @@ class EmbeddingModel:
         return vec / norms
 
     def embed_query(self, inputs: Sequence[str], dimension: int) -> np.ndarray:
-        embeddings = self.model.encode(list(inputs), prompt_name="query")
+        embeddings = self.model.encode(list(inputs), prompt_name="query", **self._encode_kwargs)
         if embeddings.ndim == 1:
             embeddings = np.expand_dims(embeddings, axis=0)
         return self._truncate_and_renorm(embeddings, dimension)
 
     def embed_document(self, inputs: Sequence[str], dimension: int) -> np.ndarray:
-        embeddings = self.model.encode(list(inputs), prompt_name="document")
+        embeddings = self.model.encode(list(inputs), prompt_name="document", **self._encode_kwargs)
         if embeddings.ndim == 1:
             embeddings = np.expand_dims(embeddings, axis=0)
         return self._truncate_and_renorm(embeddings, dimension)
@@ -48,5 +66,3 @@ def get_embedding_model() -> EmbeddingModel:
     if _embedding_model is None:
         _embedding_model = EmbeddingModel()
     return _embedding_model
-
-

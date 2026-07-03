@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from typing import List
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 
 from .auth import require_api_key
 from .ratelimit import rate_limiter
@@ -10,7 +11,14 @@ from .model import MODEL_ID, get_embedding_model
 from .schemas import EmbedRequest, EmbedResponse, HealthResponse
 
 
-app = FastAPI(title="EmbeddingGemma API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load weights at startup so first request latency is predictable.
+    get_embedding_model()
+    yield
+
+
+app = FastAPI(title="EmbeddingGemma API", version="1.0.0", lifespan=lifespan)
 
 
 @app.get("/health", response_model=HealthResponse)
